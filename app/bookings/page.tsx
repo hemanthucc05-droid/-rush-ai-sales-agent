@@ -1,0 +1,11 @@
+import Link from "next/link";
+import {redirect} from "next/navigation";
+import {createClient} from "@/lib/supabase/server";
+import {signOut} from "../actions";
+export const dynamic="force-dynamic";
+export default async function Page(){
+ const supabase=await createClient();const {data:{user}}=await supabase.auth.getUser();if(!user)redirect("/login");
+ const {data:members}=await supabase.from("workspace_members").select("workspace_id").eq("user_id",user.id).limit(1);const wid=members?.[0]?.workspace_id;if(!wid)redirect("/");
+ const {data, error}=await supabase.from("demo_bookings").select("*").eq("workspace_id",wid).order("created_at",{ascending:false}).limit(100);
+ return <main className="app-shell"><aside className="sidebar"><div className="brand">RUSH <span>AI</span></div><div className="workspace-label">Workspace</div><nav><Link href="/">Overview</Link><Link href="/leads">Leads</Link><Link href="/campaigns" className="">Campaigns</Link><Link href="/inbox" className="">Inbox</Link><Link href="/bookings" className="active">Demo bookings</Link><Link href="/settings" className="">Settings</Link></nav><div className="sidebar-foot"><small>{user.email}</small><form action={signOut}><button className="link-button">Sign out</button></form></div></aside><section className="main-panel"><header className="topbar"><Link href="/">← Overview</Link><span className="connected"><i/> Live database</span></header><div className="page-content"><div className="page-heading"><div><p className="eyebrow">RUSH WORKSPACE</p><h1>Demo bookings</h1><p>Track booked product demonstrations.</p></div></div><section className="data-card"><div className="section-heading"><div><h2>Demo bookings records</h2><p>{data?.length??0} records · live database</p></div></div>{error?<p className="error-text">{error.message}</p>:!data?.length?<div className="empty-state"><h3>No demo bookings yet</h3><p>Booking|Status|Created</p></div>:<div className="table-wrap"><table><thead><tr><th>Booking</th><th>Status</th><th>Created</th></tr></thead><tbody>{data.map((row:any)=><tr key={row.id}><td>{row.name||row.title||row.lead_id||row.id}</td><td>{row.status||row.channel||row.direction||"—"}</td><td>{row.created_at?new Date(row.created_at).toLocaleString():"—"}</td></tr>)}</tbody></table></div>}</section></div></section></main>;
+}
