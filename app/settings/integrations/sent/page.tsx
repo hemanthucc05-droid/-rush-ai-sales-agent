@@ -16,7 +16,7 @@ export default async function SentIntegrationPage() {
   const configured = Boolean(process.env.SENT_API_KEY);
 
   return <main className="app-shell">
-    <aside className="sidebar"><div className="brand">RUSH <span>AI</span></div><div className="workspace-label">Workspace</div><nav><Link href="/">Overview</Link><Link href="/leads">Leads</Link><Link href="/campaigns">Campaigns</Link><Link href="/inbox">Inbox</Link><Link href="/bookings">Demo bookings</Link><Link href="/settings" className="active">Settings</Link></nav><div className="sidebar-foot"><small>{user.email}</small><form action={signOut}><button className="link-button">Sign out</button></form></div></aside>
+    <aside className="sidebar"><div className="brand">RUSH <span>AI</span></div><div className="workspace-label">Workspace</div><nav><Link href="/">Overview</Link><Link href="/leads">Leads</Link><Link href="/campaigns">Campaigns</Link><Link href="/inbox">Inbox</Link><Link href="/bookings">Demo bookings</Link><Link href="/settings" className="active">Settings</Link><Link href="/workspaces">Switch workspace</Link></nav><div className="sidebar-foot"><small>{user.email}</small><form action={signOut}><button className="link-button">Sign out</button></form></div></aside>
     <section className="main-panel"><header className="topbar"><Link href="/settings">← Integrations</Link><span className="connected"><i/> Sent provider</span></header>
       <div className="page-content">
         <div className="page-heading"><div><p className="eyebrow">CHANNEL CONFIGURATION</p><h1>Sent — WhatsApp & SMS</h1><p>One messaging provider for automatic channel routing, delivery events and two-way conversations.</p></div></div>
