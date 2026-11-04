@@ -2,6 +2,21 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
+import { ACTIVE_WORKSPACE_COOKIE, getActiveWorkspace } from "@/lib/workspaces";
+
+export async function selectWorkspace(formData: FormData) {
+  const workspaceId = String(formData.get("workspace_id") || "").trim();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  const { data: membership, error } = await supabase.from("workspace_members").select("workspace_id").eq("workspace_id", workspaceId).eq("user_id", user.id).maybeSingle();
+  if (error || !membership) throw new Error("You do not have access to that workspace.");
+  const cookieStore = await cookies();
+  cookieStore.set(ACTIVE_WORKSPACE_COOKIE, workspaceId, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 30 });
+  revalidatePath("/");
+  redirect("/");
+}
 
 export async function signOut() {
   const supabase = await createClient(); await supabase.auth.signOut(); redirect("/login");
@@ -25,8 +40,8 @@ export async function addLead(formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-  const { data: memberships } = await supabase.from("workspace_members").select("workspace_id").eq("user_id",user.id).limit(1);
-  const workspaceId = memberships?.[0]?.workspace_id;
+  const activeWorkspace = await getActiveWorkspace(supabase, user.id);
+  const workspaceId = activeWorkspace?.id;
   if (!workspaceId) throw new Error("Create a workspace first.");
   const email = String(formData.get("email")||"").trim().toLowerCase();
   const payload = {
@@ -63,8 +78,8 @@ export async function importLeadsCsv(formData: FormData) {
   if(file.size>2*1024*1024) throw new Error("CSV must be 2 MB or smaller.");
   const supabase=await createClient();
   const {data:{user}}=await supabase.auth.getUser();if(!user)redirect("/login");
-  const {data:members}=await supabase.from("workspace_members").select("workspace_id").eq("user_id",user.id).limit(1);
-  const workspaceId=members?.[0]?.workspace_id;if(!workspaceId)throw new Error("Create a workspace first.");
+  const activeWorkspace=await getActiveWorkspace(supabase,user.id);
+  const workspaceId=activeWorkspace?.id;if(!workspaceId)throw new Error("Create a workspace first.");
   const rows=parseCsv(await file.text());
   if(rows.length<2)throw new Error("CSV needs a header row and at least one contact.");
   const headers=rows[0].map(h=>h.toLowerCase().replace(/[^a-z0-9]/g,""));
