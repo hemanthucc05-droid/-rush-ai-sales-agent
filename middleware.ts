@@ -3,6 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
+  // Provider webhooks authenticate with their own signatures, not browser sessions.
+  if (request.nextUrl.pathname === "/api/webhooks/sent") return response;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return response;
