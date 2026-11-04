@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveWorkspace } from "@/lib/workspaces";
 import { signOut } from "../actions";
 export const dynamic = "force-dynamic";
 export default async function SettingsPage() {
  const supabase = await createClient();
  const { data: { user } } = await supabase.auth.getUser();
  if (!user) redirect("/login");
- const { data: memberships } = await supabase.from("workspace_members").select("workspace_id").eq("user_id", user.id).limit(1);
- if (!memberships?.[0]?.workspace_id) redirect("/");
+ const activeWorkspace = await getActiveWorkspace(supabase, user.id);
+ if (!activeWorkspace) redirect("/");
  const sentReady = !!process.env.SENT_API_KEY;
  const whatsappReady = !!(process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_BUSINESS_ACCOUNT_ID);
  const smsReady = !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER);
