@@ -33,7 +33,7 @@ export default async function Dashboard() {
 
   return <main className="app-shell">
     <aside className="sidebar"><div className="brand">RUSH <span>AI</span></div><div className="workspace-label">{workspace.name}</div><nav>
-      <Link className="active" href="/">Overview</Link><Link href="/leads">Leads</Link><Link href="/campaigns">Campaigns</Link><Link href="/inbox">Inbox</Link><Link href="/bookings">Demo bookings</Link><Link href="/settings">Settings</Link>
+      <Link className="active" href="/">Overview</Link><Link href="/leads">Leads</Link><Link href="/campaigns">Campaigns</Link><Link href="/inbox">Inbox</Link><Link href="/bookings">Demo bookings</Link><Link href="/settings">Settings</Link><Link href="/workspaces">Switch workspace</Link>
     </nav><div className="sidebar-foot"><small>{user.email}</small><form action={signOut}><button className="link-button" type="submit">Sign out</button></form></div></aside>
     <section className="main-panel"><header className="topbar"><span>Workspace / Overview</span><span className="connected"><i/> Live database</span></header><div className="page-content">
       <div className="page-heading"><div><p className="eyebrow">SALES COMMAND CENTER</p><h1>Welcome to RUSH</h1><p>Your workspace is connected. These numbers are read live from your database.</p></div><Link className="primary inline" href="/leads">+ Add leads</Link></div>
