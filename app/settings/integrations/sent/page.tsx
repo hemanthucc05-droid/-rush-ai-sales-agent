@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveWorkspace } from "@/lib/workspaces";
 import { signOut } from "../../../actions";
 import SentSandboxTest from "./SentSandboxTest";
 
@@ -11,7 +12,7 @@ export default async function SentIntegrationPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const { data: members } = await supabase.from("workspace_members").select("workspace_id").eq("user_id", user.id).limit(1);
-  if (!members?.[0]?.workspace_id) redirect("/");
+  if (!activeWorkspace?.id) redirect("/");
   const configured = Boolean(process.env.SENT_API_KEY);
 
   return <main className="app-shell">
