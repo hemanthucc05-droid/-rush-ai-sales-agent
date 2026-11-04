@@ -11,7 +11,7 @@ export default async function SentIntegrationPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-  const { data: members } = await supabase.from("workspace_members").select("workspace_id").eq("user_id", user.id).limit(1);
+  const activeWorkspace = await getActiveWorkspace(supabase, user.id);
   if (!activeWorkspace?.id) redirect("/");
   const configured = Boolean(process.env.SENT_API_KEY);
 
