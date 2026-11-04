@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, createHash, timingSafeEqual } from "node:crypto";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -71,14 +71,26 @@ export async function POST(request: Request) {
   }
 
   const webhookId = request.headers.get("webhook-id")!;
-  const eventId = String(payload.id || payload.event_id || webhookId).slice(0, 255);
+  const eventId = String(payload.id || payload.event_id || createHash("sha256").update(rawBody).digest("hex")).slice(0, 255);
   const eventType = String(payload.type || payload.event || "unknown").slice(0, 128);
 
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false }
   });
+  const { data: integration, error: integrationError } = await admin
+    .from("workspace_provider_webhooks")
+    .select("workspace_id")
+    .eq("provider", "sent")
+    .eq("provider_webhook_id", webhookId)
+    .maybeSingle();
+  if (integrationError || !integration?.workspace_id) {
+    console.error("Sent webhook is not mapped to a workspace", integrationError?.message || "mapping missing");
+    return NextResponse.json({ error: "Webhook is not registered to a Rush workspace." }, { status: 404 });
+  }
+
   const { error } = await admin.from("sent_webhook_events").upsert(
     {
+      workspace_id: integration.workspace_id,
       provider_event_id: eventId,
       webhook_id: webhookId,
       event_type: eventType,
