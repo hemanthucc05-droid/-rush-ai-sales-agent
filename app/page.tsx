@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveWorkspace } from "@/lib/workspaces";
 import { signOut, createWorkspace } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -10,12 +11,7 @@ export default async function Dashboard() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: memberships } = await supabase
-    .from("workspace_members")
-    .select("workspace_id, role, workspaces(id, name, slug)")
-    .eq("user_id", user.id);
-
-  const workspace = memberships?.[0]?.workspaces as unknown as {id:string;name:string;slug:string}|null;
+  const workspace = await getActiveWorkspace(supabase, user.id);
   if (!workspace) {
     return <main className="auth-shell"><section className="auth-card"><div className="brand">RUSH <span>AI</span></div><h1>Create your workspace</h1><p>Your account is authenticated. Create the first workspace to start using RUSH.</p><form action={createWorkspace}><label>Workspace name<input name="name" placeholder="My sales team" required minLength={2}/></label><button className="primary" type="submit">Create workspace</button></form><form action={signOut}><button className="link-button" type="submit">Sign out</button></form></section></main>;
   }
