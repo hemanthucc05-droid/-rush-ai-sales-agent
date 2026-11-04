@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveWorkspace } from "@/lib/workspaces";
 
 export const runtime = "nodejs";
 
@@ -13,11 +14,8 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
 
-    const { data: memberships, error: membershipError } = await supabase
-      .from("workspace_members").select("workspace_id").eq("user_id", user.id).limit(1);
-    if (membershipError || !memberships?.length) {
-      return NextResponse.json({ error: "Workspace membership required." }, { status: 403 });
-    }
+    const activeWorkspace = await getActiveWorkspace(supabase, user.id);
+    if (!activeWorkspace) return NextResponse.json({ error: "Workspace membership required." }, { status: 403 });
 
     const apiKey = process.env.SENT_API_KEY;
     if (!apiKey) return NextResponse.json({ error: "Sent is not configured. Add SENT_API_KEY in Vercel." }, { status: 503 });
