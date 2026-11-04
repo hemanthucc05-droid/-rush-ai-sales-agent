@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getActiveWorkspace } from "@/lib/workspaces";
+import { cookies } from "next/headers";
+import { ACTIVE_WORKSPACE_COOKIE } from "@/lib/workspaces";
 
 export const runtime = "nodejs";
 
@@ -14,8 +15,11 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
 
-    const activeWorkspace = await getActiveWorkspace(supabase, user.id);
-    if (!activeWorkspace) return NextResponse.json({ error: "Workspace membership required." }, { status: 403 });
+    const workspaceId = (await cookies()).get(ACTIVE_WORKSPACE_COOKIE)?.value;
+    if (!workspaceId) return NextResponse.json({ error: "Select a workspace before testing this integration." }, { status: 409 });
+    const { data: membership, error: membershipError } = await supabase.from("workspace_members")
+      .select("workspace_id").eq("workspace_id", workspaceId).eq("user_id", user.id).maybeSingle();
+    if (membershipError || !membership) return NextResponse.json({ error: "Workspace membership required." }, { status: 403 });
 
     const apiKey = process.env.SENT_API_KEY;
     if (!apiKey) return NextResponse.json({ error: "Sent is not configured. Add SENT_API_KEY in Vercel." }, { status: 503 });
