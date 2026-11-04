@@ -5,7 +5,7 @@ import { getActiveWorkspace } from "@/lib/workspaces";
 export async function GET(){
  const supabase=await createClient();
  const {data:{user}}=await supabase.auth.getUser();if(!user)return redirect("/login");
- const {data:members}=await supabase.from("workspace_members").select("workspace_id").eq("user_id",user.id).limit(1);
+ const activeWorkspace = await getActiveWorkspace(supabase, user.id);
  const workspaceId=activeWorkspace?.id;if(!workspaceId)return new Response("Workspace not found",{status:404});
  const {data,error}=await supabase.from("leads").select("first_name,last_name,email,phone,job_title,company_name,status,source,created_at").eq("workspace_id",workspaceId).order("created_at",{ascending:false}).limit(10000);
  if(error)return new Response("Could not export leads",{status:500});
